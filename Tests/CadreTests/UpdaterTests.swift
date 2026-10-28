@@ -31,7 +31,7 @@ final class UpdaterTests: XCTestCase {
     private var work: URL!
 
     override func setUpWithError() throws {
-        work = FileManager.default.temporaryDirectory.appendingPathComponent("CadreUpdaterTests-\(UUID().uuidString)")
+        work = FileManager.default.temporaryDirectory.appendingPathComponent("CadreUpdaterTests-\(UUID().uuidString).noindex")
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
     }
 
@@ -100,7 +100,8 @@ final class UpdaterTests: XCTestCase {
         try finished.run()
         finished.waitUntilExit()
 
-        try UpdateInstaller.replaceAfterExit(pid: finished.processIdentifier, current: installed, with: newApp, relaunch: false)
+        try UpdateInstaller.replaceAfterExit(pid: finished.processIdentifier, current: installed, with: newApp, relaunch: false,
+                                             cleanUp: staged)
         let plist = installed.appendingPathComponent("Contents/Info.plist")
         let deadline = Date().addingTimeInterval(10)
         while Date() < deadline, (NSDictionary(contentsOf: plist)?["CadreTestMarker"] as? String) != "new" {
@@ -108,6 +109,9 @@ final class UpdaterTests: XCTestCase {
         }
         XCTAssertEqual(NSDictionary(contentsOf: plist)?["CadreTestMarker"] as? String, "new")
         XCTAssertFalse(FileManager.default.fileExists(atPath: newApp.path))
+        let cleaned = Date().addingTimeInterval(5)
+        while Date() < cleaned, FileManager.default.fileExists(atPath: staged.path) { Thread.sleep(forTimeInterval: 0.1) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staged.path), "staging folder should be removed")
         XCTAssertNoThrow(try UpdateInstaller.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", installed.path]))
     }
 }

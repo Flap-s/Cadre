@@ -102,8 +102,10 @@ final class OverlaySession {
             windows.append(window)
             window.orderFrontRegardless()
         }
-        NSApp.activate()
-        (windows.first { NSMouseInRect(mouse, $0.frame, false) } ?? windows.first)?.makeKey()
+        // Like the system screenshot UI, take the keyboard without activating Cadre, so the app
+        // being captured stays frontmost and keeps its focused window.
+        (windows.first { NSMouseInRect(mouse, $0.frame, false) } ?? windows.first)?.makeKeyAndOrderFront(nil)
+        NSCursor.crosshair.set()
         updateHover()
         redraw()
     }
@@ -242,14 +244,17 @@ final class OverlaySession {
     }
 }
 
-private final class OverlayWindow: NSWindow {
+private final class OverlayWindow: NSPanel {
     let overlayView: OverlayView
     private let targetScreen: NSScreen
 
     init(session: OverlaySession, screen: NSScreen) {
         targetScreen = screen
         overlayView = OverlayView(session: session, screen: screen)
-        super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        super.init(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        isFloatingPanel = true
+        hidesOnDeactivate = false
+        becomesKeyOnlyIfNeeded = false
         setFrame(screen.frame, display: false)
         level = .screenSaver
         isOpaque = false
@@ -286,7 +291,10 @@ private final class OverlayView: NSView {
     override func resetCursorRects() { addCursorRect(bounds, cursor: .crosshair) }
     override func cursorUpdate(with event: NSEvent) { NSCursor.crosshair.set() }
 
-    override func mouseMoved(with event: NSEvent) { session.mouseMoved(to: NSEvent.mouseLocation) }
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.crosshair.set()
+        session.mouseMoved(to: NSEvent.mouseLocation)
+    }
     override func mouseDown(with event: NSEvent) {
         window?.makeKey()
         session.mouseDown(at: NSEvent.mouseLocation)

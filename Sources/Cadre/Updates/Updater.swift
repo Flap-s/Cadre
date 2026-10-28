@@ -157,7 +157,8 @@ final class Updater: ObservableObject {
 
         state = .downloading
         do {
-            let work = FileManager.default.temporaryDirectory.appendingPathComponent("CadreUpdate-\(UUID().uuidString)")
+            // ".noindex" keeps Spotlight from listing the staged copy.
+            let work = FileManager.default.temporaryDirectory.appendingPathComponent("CadreUpdate-\(UUID().uuidString).noindex")
             try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
             let (downloaded, response) = try await URLSession.shared.download(from: asset.browserDownloadUrl)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw UpdateError.message("The download failed.") }
@@ -172,7 +173,7 @@ final class Updater: ObservableObject {
                 return app
             }.value
             try UpdateInstaller.replaceAfterExit(pid: ProcessInfo.processInfo.processIdentifier,
-                                                 current: currentApp, with: newApp, relaunch: true)
+                                                 current: currentApp, with: newApp, relaunch: true, cleanUp: work)
             NSApp.terminate(nil)
         } catch {
             state = .failed(error.localizedDescription)
@@ -232,10 +233,10 @@ enum UpdateInstaller {
     }
 
     /// Waits for `pid` to exit, swaps `current` for `new` (restoring the old app on failure),
-    /// then optionally relaunches it. Runs detached so it outlives the app.
-    static func replaceAfterExit(pid: Int32, current: URL, with new: URL, relaunch: Bool) throws {
+    /// deletes `cleanUp`, then optionally relaunches. Runs detached so it outlives the app.
+    static func replaceAfterExit(pid: Int32, current: URL, with new: URL, relaunch: Bool, cleanUp: URL? = nil) throws {
         let script = """
-        pid="$1"; current="$2"; new="$3"; relaunch="$4"
+        pid="$1"; current="$2"; new="$3"; relaunch="$4"; cleanup="$5"
         while kill -0 "$pid" 2>/dev/null; do sleep 0.2; done
         backup="$(mktemp -d)/previous.app"
         if mv "$current" "$backup"; then
@@ -246,12 +247,14 @@ enum UpdateInstaller {
           fi
         fi
         xattr -dr com.apple.quarantine "$current" 2>/dev/null
+        [ -n "$cleanup" ] && rm -rf "$cleanup"
         [ "$relaunch" = 1 ] && open "$current"
         exit 0
         """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script, "cadre-update", String(pid), current.path, new.path, relaunch ? "1" : "0"]
+        process.arguments = ["-c", script, "cadre-update", String(pid), current.path, new.path, relaunch ? "1" : "0",
+                             cleanUp?.path ?? ""]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()

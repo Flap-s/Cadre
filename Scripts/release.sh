@@ -14,8 +14,8 @@ if git rev-parse "v$NEW" >/dev/null 2>&1; then echo "Tag v$NEW already exists.";
 echo "$NEW" > VERSION
 swift test
 ./Scripts/build-app.sh
-rm -f build/Cadre.zip
-ditto -c -k --keepParent build/Cadre.app build/Cadre.zip
+rm -f build.noindex/Cadre.zip
+ditto -c -k --keepParent build.noindex/Cadre.app build.noindex/Cadre.zip
 
 if ! git diff --quiet VERSION; then
   git add VERSION
@@ -23,5 +23,5 @@ if ! git diff --quiet VERSION; then
 fi
 git tag "v$NEW"
 git push origin HEAD "v$NEW"
-gh release create "v$NEW" build/Cadre.zip --title "Cadre $NEW" --notes "$NOTES"
+gh release create "v$NEW" build.noindex/Cadre.zip --title "Cadre $NEW" --notes "$NOTES"
 echo "Released Cadre $NEW"

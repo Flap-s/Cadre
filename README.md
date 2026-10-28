@@ -10,11 +10,11 @@ Outil de capture d'écran pour macOS 15+, inspiré des fonctionnalités de Clean
 ```
 
 ```bash
-open build/Cadre.app
+open build.noindex/Cadre.app
 ```
 
 L'app est signée ad hoc. Pour garder les autorisations macOS d'une compilation à l'autre, signez avec votre identité :
-`CODESIGN_IDENTITY="Developer ID Application: …" ./Scripts/build-app.sh`. Copiez `build/Cadre.app` dans
+`CODESIGN_IDENTITY="Developer ID Application: …" ./Scripts/build-app.sh`. Copiez `build.noindex/Cadre.app` dans
 `/Applications` pour l'option « Ouvrir au démarrage ».
 
 Tests : `swift test`
