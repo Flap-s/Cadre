@@ -1,11 +1,12 @@
 #!/bin/zsh
-# Builds Cadre.app into ./build. Set CODESIGN_IDENTITY to sign with your Developer ID;
+# Builds Cadre.app into ./build.noindex (".noindex" keeps Spotlight from listing build copies). Set CODESIGN_IDENTITY to sign with your Developer ID;
 # otherwise the app is signed ad hoc with a requirement pinned to its bundle identifier.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT=$PWD
-APP="$ROOT/build/Cadre.app"
+BUILD="$ROOT/build.noindex"
+APP="$BUILD/Cadre.app"
 VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 # GitHub "owner/repo" the app checks for updates: UPDATE_REPOSITORY, else the git remote.
 if [[ -z "${UPDATE_REPOSITORY:-}" ]]; then
@@ -22,7 +23,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Cadre"
 
 # Icon
-ICON_WORK="$ROOT/build/icon"
+ICON_WORK="$BUILD/icon"
 rm -rf "$ICON_WORK" && mkdir -p "$ICON_WORK/Cadre.iconset"
 swift "$ROOT/Scripts/make-icon.swift" "$ICON_WORK/icon.png"
 for s in 16 32 128 256 512; do
