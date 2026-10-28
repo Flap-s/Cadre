@@ -26,7 +26,16 @@ final class UpdaterTests: XCTestCase {
         XCTAssertEqual(release.appArchive?.browserDownloadUrl.absoluteString, "https://example.com/Cadre.zip")
     }
 
-    // MARK: Installer
+    func testReleaseFromLatestPageRedirect() {
+        let page = URL(string: "https://github.com/Flap-s/Cadre/releases/tag/v1.0.2")!
+        let release = GitHubRelease.fromLatestPage(page, repository: "Flap-s/Cadre")
+        XCTAssertEqual(release?.version, AppVersion("1.0.2"))
+        XCTAssertEqual(release?.appArchive?.browserDownloadUrl.absoluteString,
+                       "https://github.com/Flap-s/Cadre/releases/download/v1.0.2/Cadre.zip")
+        XCTAssertNil(GitHubRelease.fromLatestPage(URL(string: "https://github.com/Flap-s/Cadre/releases")!, repository: "Flap-s/Cadre"))
+    }
+
+        // MARK: Installer
 
     private var work: URL!
 
