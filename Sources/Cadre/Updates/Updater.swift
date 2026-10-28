@@ -53,6 +53,18 @@ struct GitHubRelease: Decodable, Equatable {
             ?? assets.first { $0.name.hasPrefix("Cadre") && $0.name.hasSuffix(".zip") }
     }
 
+    /// Builds a release from the page `github.com/<repo>/releases/latest` redirects to
+    /// (`…/releases/tag/<tag>`). Used when the rate-limited API is unavailable.
+    static func fromLatestPage(_ url: URL, repository: String) -> GitHubRelease? {
+        let parts = url.pathComponents
+        guard let index = parts.lastIndex(of: "tag"), index + 1 < parts.count else { return nil }
+        let tag = parts[index + 1]
+        guard AppVersion(tag) != nil,
+              let download = URL(string: "https://github.com/\(repository)/releases/download/\(tag)/Cadre.zip") else { return nil }
+        return GitHubRelease(tagName: tag, name: nil, body: nil, htmlUrl: url, draft: false, prerelease: false,
+                             assets: [Asset(name: "Cadre.zip", browserDownloadUrl: download, size: 0)])
+    }
+
     static func decode(_ data: Data) throws -> GitHubRelease {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -113,20 +125,12 @@ final class Updater: ObservableObject {
         if state == .checking || state == .downloading || state == .installing { return }
         state = .checking
         do {
-            var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!)
-            request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            request.setValue("Cadre/\(currentVersion)", forHTTPHeaderField: "User-Agent")
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard let release = try await fetchLatestRelease(repository) else {
+                state = .upToDate // no release published yet
+                return
+            }
             lastChecked = Date()
             UserDefaults.standard.set(lastChecked, forKey: PrefKey.lastUpdateCheck)
-
-            if status == 404 { state = .upToDate; return } // no release published yet
-            guard status == 200 else {
-                throw UpdateError.message(status == 403 ? "GitHub rate limit reached, try again later." : "GitHub answered HTTP \(status).")
-            }
-            let release = try GitHubRelease.decode(data)
             guard let latest = release.version, let current = AppVersion(currentVersion),
                   !release.draft, !release.prerelease, latest > current, release.appArchive != nil else {
                 state = .upToDate
@@ -140,6 +144,30 @@ final class Updater: ObservableObject {
         } catch {
             state = .failed(error.localizedDescription)
         }
+    }
+
+    /// The API gives release notes but allows only 60 anonymous requests per hour per IP address;
+    /// when it refuses, read the version from the public "latest release" redirect instead.
+    private func fetchLatestRelease(_ repository: String) async throws -> GitHubRelease? {
+        var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("Cadre/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        if let (data, response) = try? await URLSession.shared.data(for: request),
+           let status = (response as? HTTPURLResponse)?.statusCode {
+            if status == 200, let release = try? GitHubRelease.decode(data) { return release }
+            if status == 404 { return nil }
+        }
+
+        var page = URLRequest(url: URL(string: "https://github.com/\(repository)/releases/latest")!)
+        page.httpMethod = "HEAD"
+        page.cachePolicy = .reloadIgnoringLocalCacheData
+        let (_, response) = try await URLSession.shared.data(for: page)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200, let final = http.url else {
+            throw UpdateError.message("Couldn't reach GitHub.")
+        }
+        // Without any release, GitHub lands on the releases list instead of a tag page.
+        return GitHubRelease.fromLatestPage(final, repository: repository)
     }
 
     func install() async {
