@@ -97,28 +97,6 @@ enum Clipboard {
         if let tiff = ns.tiffRepresentation { pb.setData(tiff, forType: .tiff) }
     }
 
-    @MainActor private static var pending: (provider: LazyImageProvider, pasteboard: NSPasteboard, changeCount: Int)?
-
-    /// Puts the image on the pasteboard as a promise: the PNG/TIFF data is only produced when an app
-    /// asks for it, which is when the user pastes. `onPaste` runs once, on the main thread, at that moment.
-    @MainActor static func copyLazily(image: CGImage, scale: CGFloat, to pb: NSPasteboard = .general,
-                                      onPaste: @escaping @MainActor () -> Void) {
-        let provider = LazyImageProvider(image: image, scale: scale, onPaste: onPaste)
-        let item = NSPasteboardItem()
-        item.setDataProvider(provider, forTypes: [.png, .tiff])
-        pb.clearContents()
-        pb.writeObjects([item])
-        pending = (provider, pb, pb.changeCount)
-    }
-
-    /// A promise dies with the app, so before quitting turn a still-unused one into real data.
-    @MainActor static func fulfillPendingPromise() {
-        guard let p = pending else { return }
-        pending = nil
-        guard p.pasteboard.changeCount == p.changeCount, !p.provider.delivered else { return }
-        copy(image: p.provider.image, scale: p.provider.scale, to: p.pasteboard)
-    }
-
     static func copy(fileURL: URL) {
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -143,25 +121,3 @@ enum Clipboard {
     }
 }
 
-/// Supplies a promised image the first time an app pastes it.
-final class LazyImageProvider: NSObject, NSPasteboardItemDataProvider {
-    let image: CGImage
-    let scale: CGFloat
-    private let onPaste: @MainActor () -> Void
-    private(set) var delivered = false
-
-    init(image: CGImage, scale: CGFloat, onPaste: @escaping @MainActor () -> Void) {
-        self.image = image
-        self.scale = scale
-        self.onPaste = onPaste
-    }
-
-    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
-        let data = type == .png ? image.encoded(as: .png, scale: scale) : image.nsImage(scale: scale).tiffRepresentation
-        if let data { item.setData(data, forType: type) }
-        guard !delivered else { return }
-        delivered = true
-        let callback = onPaste
-        DispatchQueue.main.async { MainActor.assumeIsolated { callback() } }
-    }
-}

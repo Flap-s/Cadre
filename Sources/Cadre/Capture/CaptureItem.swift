@@ -84,14 +84,9 @@ final class CaptureItem {
 
     // MARK: Actions
 
-    /// With `onPaste`, the image is copied as a promise and `onPaste` runs when an app first pastes it.
-    func copyToPasteboard(onPaste: (@MainActor () -> Void)? = nil) {
+    func copyToPasteboard() {
         if kind == .image, let image {
-            if let onPaste {
-                Clipboard.copyLazily(image: image, scale: scale, onPaste: onPaste)
-            } else {
-                Clipboard.copy(image: image, scale: scale)
-            }
+            Clipboard.copy(image: image, scale: scale)
         } else {
             Clipboard.copy(fileURL: fileURL)
         }

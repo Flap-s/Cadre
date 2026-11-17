@@ -18,6 +18,7 @@ final class QuickAccessManager {
 
     func close(_ panel: QuickAccessPanel) {
         guard let index = panels.firstIndex(where: { $0 === panel }) else { return }
+        PasteWatcher.shared.forget(panel.item)
         panels.remove(at: index)
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.18

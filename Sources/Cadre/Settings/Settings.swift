@@ -141,6 +141,7 @@ private struct ScreenshotSettings: View {
     @AppStorage(PrefKey.overlayOnRight) private var overlayRight = false
     @AppStorage(PrefKey.overlayAutoCloseSeconds) private var autoClose = 0
     @AppStorage(PrefKey.closeOverlayAfterPaste) private var closeAfterPaste = true
+    @State private var accessibilityGranted = Permissions.ensureAccessibility(prompt: false)
 
     var body: some View {
         Form {
@@ -173,9 +174,20 @@ private struct ScreenshotSettings: View {
                     Text("After 10 seconds").tag(10)
                     Text("After 30 seconds").tag(30)
                 }
-                Toggle("Close after the capture is pasted", isOn: $closeAfterPaste)
+                Toggle("Close after the capture is pasted (⌘V)", isOn: $closeAfterPaste)
                     .disabled(!copy)
-                    .help("Needs \"Copy to clipboard\". A clipboard manager that reads every copy can close it immediately.")
+                    .help("Needs \"Copy to clipboard\" and Accessibility access. Pasting from a menu isn't detected.")
+                if closeAfterPaste && copy && !accessibilityGranted {
+                    HStack {
+                        Label("Needs Accessibility access to notice ⌘V", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("Grant Access") {
+                            Permissions.ensureAccessibility(prompt: true)
+                            Permissions.openPrivacyPane("Privacy_Accessibility")
+                        }
+                    }
+                }
             }
         }
         .formStyle(.grouped)

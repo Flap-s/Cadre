@@ -47,6 +47,7 @@ enum PrefKey {
     static let overlayOnRight = "overlayOnRight"
     static let overlayAutoCloseSeconds = "overlayAutoCloseSeconds"
     static let closeOverlayAfterPaste = "closeOverlayAfterPaste"
+    static let pasteAccessPrompted = "pasteAccessPrompted"
     static let recFPS = "recFPS"
     static let recCodec = "recCodec"
     static let recSystemAudio = "recSystemAudio"
