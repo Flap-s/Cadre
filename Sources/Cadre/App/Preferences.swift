@@ -46,6 +46,7 @@ enum PrefKey {
     static let selfTimerSeconds = "selfTimerSeconds"
     static let overlayOnRight = "overlayOnRight"
     static let overlayAutoCloseSeconds = "overlayAutoCloseSeconds"
+    static let closeOverlayAfterPaste = "closeOverlayAfterPaste"
     static let recFPS = "recFPS"
     static let recCodec = "recCodec"
     static let recSystemAudio = "recSystemAudio"
@@ -87,6 +88,7 @@ enum Prefs {
             PrefKey.selfTimerSeconds: 5,
             PrefKey.overlayOnRight: false,
             PrefKey.overlayAutoCloseSeconds: 0,
+            PrefKey.closeOverlayAfterPaste: true,
             PrefKey.recFPS: 30,
             PrefKey.recCodec: "h264",
             PrefKey.recSystemAudio: false,
@@ -126,6 +128,7 @@ enum Prefs {
     static var selfTimerSeconds: Int { max(1, d.integer(forKey: PrefKey.selfTimerSeconds)) }
     static var overlayOnRight: Bool { d.bool(forKey: PrefKey.overlayOnRight) }
     static var overlayAutoCloseSeconds: Int { d.integer(forKey: PrefKey.overlayAutoCloseSeconds) }
+    static var closeOverlayAfterPaste: Bool { d.bool(forKey: PrefKey.closeOverlayAfterPaste) }
     static var recFPS: Int { max(1, d.integer(forKey: PrefKey.recFPS)) }
     static var recUsesHEVC: Bool { d.string(forKey: PrefKey.recCodec) == "hevc" }
     static var recSystemAudio: Bool { d.bool(forKey: PrefKey.recSystemAudio) }

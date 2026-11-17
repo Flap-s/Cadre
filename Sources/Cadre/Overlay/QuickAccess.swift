@@ -28,6 +28,13 @@ final class QuickAccessManager {
 
     func closeAll() { panels.forEach(close) }
 
+    /// Closes the thumbnail showing `item`, if it is still on screen.
+    func dismiss(_ item: CaptureItem) {
+        panels.first { $0.item === item }.map(close)
+    }
+
+    var visibleItems: [CaptureItem] { panels.map(\.item) }
+
     private func layout(animated: Bool, newPanel: QuickAccessPanel?) {
         guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { return }
         let margin: CGFloat = 18, spacing: CGFloat = 12

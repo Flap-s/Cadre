@@ -29,6 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        Clipboard.fulfillPendingPromise()
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         SettingsWindowController.show()
         return false

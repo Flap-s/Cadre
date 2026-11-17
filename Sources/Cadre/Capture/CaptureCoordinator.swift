@@ -191,7 +191,15 @@ final class CaptureCoordinator {
         }
         let item = CaptureItem(image: image, scale: scale, prefix: prefix)
         if Prefs.afterCaptureSave { item.save() }
-        if Prefs.afterCaptureCopy { item.copyToPasteboard() }
+        if Prefs.afterCaptureCopy {
+            if Prefs.afterCaptureShowOverlay && Prefs.closeOverlayAfterPaste {
+                item.copyToPasteboard { [weak item] in
+                    if let item { QuickAccessManager.shared.dismiss(item) }
+                }
+            } else {
+                item.copyToPasteboard()
+            }
+        }
         if Prefs.afterCaptureOpenEditor {
             AnnotationEditorController.open(item)
         } else if Prefs.afterCaptureShowOverlay {
