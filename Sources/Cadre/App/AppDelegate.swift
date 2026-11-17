@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if !UserDefaults.standard.bool(forKey: PrefKey.onboarded) {
             UserDefaults.standard.set(true, forKey: PrefKey.onboarded)
-            Onboarding.show()
+            OnboardingWindowController.show()
         }
     }
 
@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(item(for: .closeAllOverlays))
         menu.addItem(item(for: .openHistory))
         menu.addItem(.separator())
+        menu.addItem(withTitle: "Permissions…", action: #selector(openPermissions), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(withTitle: "Quit Cadre", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -160,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func unlockPins() { PinManager.shared.unlockAll() }
     @objc private func openSettings() { SettingsWindowController.show() }
     @objc private func openUpdates() { SettingsWindowController.show(tab: .updates) }
+    @objc private func openPermissions() { OnboardingWindowController.show() }
 
     @objc private func checkForUpdates() {
         SettingsWindowController.show(tab: .updates)
@@ -264,36 +266,13 @@ enum URLSchemeHandler {
             }
         case "open-settings":
             SettingsWindowController.show()
+        case "permissions":
+            OnboardingWindowController.show()
         case "check-for-updates":
             SettingsWindowController.show(tab: .updates)
             Task { await Updater.shared.check(userInitiated: true) }
         default:
             CaptureAction.allCases.first { $0.urlName == host }?.run()
-        }
-    }
-}
-
-@MainActor
-enum Onboarding {
-    static func show() {
-        NSApp.activate()
-        let alert = NSAlert()
-        alert.messageText = "Welcome to Cadre"
-        alert.informativeText = """
-        Cadre lives in your menu bar. Default shortcuts:
-
-        ⌥⇧3  Capture fullscreen
-        ⌥⇧4  Capture area (Space toggles window mode)
-        ⌥⇧5  All-In-One
-        ⌥⇧R  Record screen    ⌥⇧G  Record GIF
-        ⌥⇧O  Capture text (OCR)
-
-        Cadre needs Screen Recording permission. macOS will ask for it the first time you capture.
-        """
-        alert.addButton(withTitle: "Grant Screen Recording")
-        alert.addButton(withTitle: "Later")
-        if alert.runModal() == .alertFirstButtonReturn {
-            Permissions.requestScreenRecording()
         }
     }
 }

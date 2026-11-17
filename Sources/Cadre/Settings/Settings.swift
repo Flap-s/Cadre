@@ -86,6 +86,9 @@ private struct GeneralSettings: View {
                     }
                 }
             Toggle("Play sounds", isOn: $playSounds)
+            LabeledContent("Permissions") {
+                Button("Review Permissions…") { OnboardingWindowController.show() }
+            }
             Toggle("Hide desktop icons while capturing", isOn: $hideIcons)
 
             Section("Export") {
