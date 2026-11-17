@@ -75,7 +75,7 @@ enum Prefs {
             PrefKey.jpegQuality: 0.9,
             PrefKey.downscaleRetina: false,
             PrefKey.afterCaptureShowOverlay: true,
-            PrefKey.afterCaptureCopy: false,
+            PrefKey.afterCaptureCopy: true,
             PrefKey.afterCaptureSave: true,
             PrefKey.afterCaptureOpenEditor: false,
             PrefKey.freezeScreen: false,

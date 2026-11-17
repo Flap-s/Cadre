@@ -162,7 +162,7 @@ private final class QuickAccessCardView: NSView, NSDraggingSource {
     }
 
     private func pill(_ title: String, _ action: Selector) -> NSButton {
-        let b = NSButton(title: title, target: self, action: action)
+        let b = FirstMouseButton(title: title, target: self, action: action)
         b.bezelStyle = .rounded
         b.controlSize = .large
         b.widthAnchor.constraint(equalToConstant: 96).isActive = true
@@ -170,7 +170,7 @@ private final class QuickAccessCardView: NSView, NSDraggingSource {
     }
 
     private func corner(_ symbol: String, _ action: Selector, _ tip: String, top: Bool, left: Bool) {
-        let b = NSButton(image: NSImage(systemSymbolName: symbol, accessibilityDescription: tip)!, target: self, action: action)
+        let b = FirstMouseButton(image: NSImage(systemSymbolName: symbol, accessibilityDescription: tip)!, target: self, action: action)
         b.isBordered = false
         b.contentTintColor = .white
         b.toolTip = tip
@@ -211,6 +211,19 @@ private final class QuickAccessCardView: NSView, NSDraggingSource {
     // MARK: Mouse: drag out, double-click
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    /// Everything except the buttons belongs to the card itself. Otherwise the hover overlay or the
+    /// image view receives the click, refuses it as a "first mouse" on this non-key panel, and the
+    /// first drag attempt is swallowed.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+        var view: NSView? = hit
+        while let current = view, current !== self {
+            if current is NSControl { return current }
+            view = current.superview
+        }
+        return self
+    }
 
     override func mouseDown(with event: NSEvent) {
         mouseDownPoint = event.locationInWindow
@@ -278,4 +291,9 @@ private final class QuickAccessCardView: NSView, NSDraggingSource {
         closeTimer?.invalidate()
         if let panel { QuickAccessManager.shared.close(panel) }
     }
+}
+
+/// Responds on the first click even though the Quick Access panel never becomes key first.
+private final class FirstMouseButton: NSButton {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

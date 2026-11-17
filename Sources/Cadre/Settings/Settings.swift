@@ -129,7 +129,7 @@ private struct GeneralSettings: View {
 
 private struct ScreenshotSettings: View {
     @AppStorage(PrefKey.afterCaptureShowOverlay) private var showOverlay = true
-    @AppStorage(PrefKey.afterCaptureCopy) private var copy = false
+    @AppStorage(PrefKey.afterCaptureCopy) private var copy = true
     @AppStorage(PrefKey.afterCaptureSave) private var save = true
     @AppStorage(PrefKey.afterCaptureOpenEditor) private var openEditor = false
     @AppStorage(PrefKey.freezeScreen) private var freeze = false
