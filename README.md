@@ -3,6 +3,17 @@
 Outil de capture d'écran pour macOS 15+, inspiré des fonctionnalités de CleanShot X. Écrit de zéro en Swift
 (AppKit + ScreenCaptureKit + SwiftUI pour les réglages), sans code, sons ni icônes repris de CleanShot X.
 
+## Installer
+
+Télécharger **[Cadre.dmg](https://github.com/Flap-s/Cadre/releases/latest/download/Cadre.dmg)**, l'ouvrir et
+glisser Cadre sur le dossier Applications. Au premier lancement, une fenêtre propose les autorisations
+nécessaires (Enregistrement de l'écran, Accessibilité, et en option micro et caméra) ; elle reste accessible
+via le menu « Permissions… ».
+
+Cadre n'est pas notarisé par Apple : au premier lancement, macOS peut refuser de l'ouvrir. Dans ce cas,
+**Réglages Système › Confidentialité et sécurité › Ouvrir quand même**. Lancé directement depuis le disque
+image, Cadre propose de se copier lui-même dans Applications.
+
 ## Compiler et lancer
 
 ```bash

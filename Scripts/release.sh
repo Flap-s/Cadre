@@ -1,5 +1,6 @@
 #!/bin/zsh
-# Publishes a new Cadre version on GitHub Releases, where the app's updater finds it.
+# Publishes a new Cadre version on GitHub Releases: Cadre.zip for the app's updater, Cadre.dmg for
+# first-time installs.
 # Usage: Scripts/release.sh 1.1.0 "What changed"
 set -euo pipefail
 
@@ -16,6 +17,7 @@ swift test
 ./Scripts/build-app.sh
 rm -f build.noindex/Cadre.zip
 ditto -c -k --keepParent build.noindex/Cadre.app build.noindex/Cadre.zip
+./Scripts/build-dmg.sh
 
 if ! git diff --quiet VERSION; then
   git add VERSION
@@ -23,5 +25,5 @@ if ! git diff --quiet VERSION; then
 fi
 git tag "v$NEW"
 git push origin HEAD "v$NEW"
-gh release create "v$NEW" build.noindex/Cadre.zip --title "Cadre $NEW" --notes "$NOTES"
+gh release create "v$NEW" build.noindex/Cadre.zip build.noindex/Cadre.dmg --title "Cadre $NEW" --notes "$NOTES"
 echo "Released Cadre $NEW"
